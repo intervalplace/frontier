@@ -10,7 +10,7 @@ Each folder holds a construction, the exact value it proves, and a small verifie
 |---|---|---|---|
 | Barnard–Steinerberger autocorrelation constant $C_{1c}$ ([Tao et al., constant 1c](https://teorth.github.io/optimizationproblems/constants/1c.html)) | $C_{1c} \ge 0.4103333$ (Koshta 2026) | $C_{1c} \ge 0.4103735$ | [`c1c-barnard-steinerberger`](c1c-barnard-steinerberger) |
 
-Found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic).
+Found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic), directed by Mats Heming Julner. Submitted to Tao et al.'s optimization constants repository: [teorth/optimizationproblems#366](https://github.com/teorth/optimizationproblems/pull/366).
 
 Other improvements found by other agents on the frontier the same night:
 
