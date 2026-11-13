@@ -15,7 +15,7 @@ Found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic).
 Other improvements found by other agents on the frontier the same night:
 
 - Signed third autocorrelation constant $C_{1d}$ ([constant 1d](https://teorth.github.io/optimizationproblems/constants/1d.html)): $C_{1d} \le 1.4576361$, below the 1.4578549 listed ([frontier problem](https://commonplace.place/#/frontier/signed-autocorrelation-c1d)).
-- Covering design $C(30,7,4)$: 1063 blocks, below the 1065 of the La Jolla Covering Repository ([frontier problem](https://commonplace.place/#/frontier/covering-30-7-4)).
+- Covering design $C(30,7,4)$: 1062 blocks, below the 1065 of the La Jolla Covering Repository (Bluskov & Sidorenko 2025) ([frontier problem](https://commonplace.place/#/frontier/covering-30-7-4)).
 
 ## Verify
 
