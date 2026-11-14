@@ -8,15 +8,19 @@ Each folder holds a construction, the exact value it proves, and a small verifie
 
 | Problem | Previous best known | New bound | Folder |
 |---|---|---|---|
-| Barnard–Steinerberger autocorrelation constant $C_{1c}$ ([Tao et al., constant 1c](https://teorth.github.io/optimizationproblems/constants/1c.html)) | $C_{1c} \ge 0.4103333$ (Koshta 2026) | $C_{1c} \ge 0.4103735$ | [`c1c-barnard-steinerberger`](c1c-barnard-steinerberger) |
 | First autocorrelation constant $C_1$ ([constant 1a](https://teorth.github.io/optimizationproblems/constants/1a.html)) | $C_1 \le 1.50266484078$ (Cumes 2026, [QWNTL](https://qwntl.com/paper-new-constructions)) | $C_1 \le 1.5026648332$ (a refinement of Cumes's construction) | [`c1-first-autocorrelation`](c1-first-autocorrelation) |
 
-Found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic), directed by Mats Heming Julner. Submitted to Tao et al.'s optimization constants repository: [teorth/optimizationproblems#366](https://github.com/teorth/optimizationproblems/pull/366).
+Found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic), directed by Mats Heming Julner. Submitted to Tao et al.'s optimization constants repository: [teorth/optimizationproblems#367](https://github.com/teorth/optimizationproblems/pull/367).
 
-Other improvements found by other agents on the frontier the same night:
+Other results from agents on the frontier:
 
-- Signed third autocorrelation constant $C_{1d}$ ([constant 1d](https://teorth.github.io/optimizationproblems/constants/1d.html)): $C_{1d} \le 1.4575810$, below the 1.4578549 listed ([frontier problem](https://commonplace.place/#/frontier/signed-autocorrelation-c1d)).
-- Covering design $C(30,7,4)$: 1062 blocks, below the 1065 of the La Jolla Covering Repository (Bluskov & Sidorenko 2025) ([frontier problem](https://commonplace.place/#/frontier/covering-30-7-4)).
+- Erdős minimum overlap ([constant 1b](https://teorth.github.io/optimizationproblems/constants/1b.html)): $M \le 0.3808564742$, below the $0.3808565479$ of Cumes 2026 ([frontier problem](https://commonplace.place/#/frontier/erdos-minimum-overlap)).
+- Covering design $C(30,7,4)$: 1062 blocks, below the 1065 we last saw in the La Jolla Covering Repository (not re-checked since; the site has been unreachable) ([frontier problem](https://commonplace.place/#/frontier/covering-30-7-4)).
+
+## Corrections
+
+- $C_{1c} \ge 0.4103735$ ([`c1c-barnard-steinerberger`](c1c-barnard-steinerberger)) is **not** a record: Chen & Gu ([arXiv:2610.18888](https://arxiv.org/abs/2610.18888), Oct 2026) prove $C_{1c} \ge 0.4103779774$, and higher values are claimed in open pull requests to Tao et al.'s repository. We compared only against the merged table. The certificate stays here as a correct but superseded bound; [#366](https://github.com/teorth/optimizationproblems/pull/366) is being withdrawn.
+- $C_{1d} \le 1.4575810$ (frontier record) is **not** below the best claimed value: an open pull request ([#270](https://github.com/teorth/optimizationproblems/pull/270)) claims $C_{1d} \le 1.4546733$.
 
 ## Open challenges on the frontier
 

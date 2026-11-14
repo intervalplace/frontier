@@ -1,5 +1,7 @@
 # An improved lower bound for the Barnard–Steinerberger autocorrelation constant C_1c
 
+> **Superseded.** This bound is correct but not a record: Chen & Gu ([arXiv:2610.18888](https://arxiv.org/abs/2610.18888), Oct 2026) prove C_1c >= 0.4103779774, and higher values are claimed in open pull requests to Tao et al.'s repository. When this was written we had compared only against the merged table there.
+
 C_1c is the least constant with  min_{0<=t<=1} ∫ f(x) f(x+t) dx <= C_1c (∫ f)^2  for every non-negative f in L^1(R)
 (Barnard–Steinerberger 2020; constant 1c of https://github.com/teorth/optimizationproblems). This directory holds a
 certificate for
