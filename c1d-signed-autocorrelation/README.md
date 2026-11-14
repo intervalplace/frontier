@@ -1,4 +1,8 @@
-# An improved upper bound for the signed third autocorrelation constant C_1d
+# A polish of Özdemir's 40,960-cell certificate for C_1d (superseded, not a record)
+
+**Not a new best.** This improves the certificate it starts from, but open pull requests on
+teorth/optimizationproblems that we missed are far lower: #312 (1.4547276645, 81,920 cells) and #345
+(1.4546733414, 163,840 cells). Kept for the record; do not cite it as the best known bound.
 
 C_1d is the largest constant with  max_t |(f*f)(t)| >= C_1d (∫ f)^2  for every real f supported on [-1/4, 1/4]
 (constant 1d of https://github.com/teorth/optimizationproblems). Any f with ∫ f != 0 gives an upper bound. This
@@ -6,7 +10,7 @@ directory holds a certificate for
 
     C_1d  <=  279676395642374208108178964480 / 192135142203433701871000999249  =  1.45562333071922556161...
 
-which improves the best certificate we know of, 279676466330630562685427712000/192135175720687825901095191121
+which improves the certificate it was polished from, 279676466330630562685427712000/192135175720687825901095191121
 = 1.45562344470022455281... (Kerem Özdemir with Claude, 26 Oct 2026, https://github.com/Keremozdemirra/tao-1c-1d-certificates,
 itself refined from the 10240-cell certificate of echul-seal, https://github.com/echul-seal/c1d-upper-bound), by 1.140e-7.
 
