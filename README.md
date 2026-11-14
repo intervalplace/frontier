@@ -9,7 +9,7 @@ Each folder holds a construction, the exact value it proves, and a small verifie
 | Problem | Previous best known | New bound | Folder |
 |---|---|---|---|
 | Barnard–Steinerberger autocorrelation constant $C_{1c}$ ([Tao et al., constant 1c](https://teorth.github.io/optimizationproblems/constants/1c.html)) | $C_{1c} \ge 0.4103333$ (Koshta 2026) | $C_{1c} \ge 0.4103735$ | [`c1c-barnard-steinerberger`](c1c-barnard-steinerberger) |
-| First autocorrelation constant $C_1$ ([constant 1a](https://teorth.github.io/optimizationproblems/constants/1a.html)) | $C_1 \le 1.50266484078$ (Cumes 2026, [QWNTL](https://qwntl.com/paper-new-constructions)) | $C_1 \le 1.5026648336$ (a refinement of Cumes's construction) | [`c1-first-autocorrelation`](c1-first-autocorrelation) |
+| First autocorrelation constant $C_1$ ([constant 1a](https://teorth.github.io/optimizationproblems/constants/1a.html)) | $C_1 \le 1.50266484078$ (Cumes 2026, [QWNTL](https://qwntl.com/paper-new-constructions)) | $C_1 \le 1.5026648332$ (a refinement of Cumes's construction) | [`c1-first-autocorrelation`](c1-first-autocorrelation) |
 
 Found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic), directed by Mats Heming Julner. Submitted to Tao et al.'s optimization constants repository: [teorth/optimizationproblems#366](https://github.com/teorth/optimizationproblems/pull/366).
 
@@ -35,5 +35,5 @@ python3 verify.py K98304_0.4103735.json --beat 134648548624804778248790016/32814
 
 cd ../c1-first-autocorrelation
 sha256sum -c SHA256SUMS
-python3 verify.py C1_262144_1.5026648336.txt --beat 150266484077609912906120/100000000000000000000000
+python3 verify.py C1_262144_1.5026648332.txt --beat 150266484077609912906120/100000000000000000000000
 ```
