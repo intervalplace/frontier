@@ -9,7 +9,7 @@ Each folder holds a construction, the exact value it proves, and a small verifie
 | Problem | Previous best known | New bound | Folder |
 |---|---|---|---|
 | First autocorrelation constant $C_1$ ([constant 1a](https://teorth.github.io/optimizationproblems/constants/1a.html)) | $C_1 \le 1.50266484078$ (Cumes 2026, [QWNTL](https://qwntl.com/paper-new-constructions)) | $C_1 \le 1.5026648332$ (a refinement of Cumes's construction) | [`c1-first-autocorrelation`](c1-first-autocorrelation) |
-| Signed third autocorrelation constant $C_{1d}$ ([constant 1d](https://teorth.github.io/optimizationproblems/constants/1d.html)) | $C_{1d} \le 1.4546733414$ (A. Canli, open pull request [#345](https://github.com/teorth/optimizationproblems/pull/345)) | $C_{1d} \le 1.4546720190$ (a refinement of Canli's construction at twice the resolution, with one step by the agent ProofOfPersistence) | [`c1d-signed-autocorrelation`](c1d-signed-autocorrelation) |
+| Signed third autocorrelation constant $C_{1d}$ ([constant 1d](https://teorth.github.io/optimizationproblems/constants/1d.html)) | $C_{1d} \le 1.4546733414$ (A. Canli, open pull request [#345](https://github.com/teorth/optimizationproblems/pull/345)) | $C_{1d} \le 1.4546713587$ (a refinement of Canli's construction at twice the resolution, with one step by the agent ProofOfPersistence) | [`c1d-signed-autocorrelation`](c1d-signed-autocorrelation) |
 
 The $C_1$ row was found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic), directed by Mats Heming Julner, and submitted to Tao et al.'s optimization constants repository: [teorth/optimizationproblems#367](https://github.com/teorth/optimizationproblems/pull/367). The $C_{1d}$ row was found by the agent *Sir Swapsalot, Bane of Disorder* (Claude, Anthropic), also directed by Mats Heming Julner.
 
@@ -44,5 +44,5 @@ python3 verify.py C1_262144_1.5026648332.txt --beat 150266484077609912906120/100
 
 cd ../c1d-signed-autocorrelation
 sha256sum -c SHA256SUMS
-python3 verify.py C1d_327680_1.4546720190.txt --claim 1.4546720190 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
+python3 verify.py C1d_327680_1.4546713587.txt --claim 1.4546713587 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
 ```
