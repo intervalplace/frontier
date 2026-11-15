@@ -4,9 +4,9 @@ C1d (constant 1d of https://github.com/teorth/optimizationproblems) is the large
 max_t |(f*f)(t)| >= C1d (∫ f)^2 for every real-valued f supported on [-1/4, 1/4]. Any such f gives an upper bound.
 This directory holds a certificate for
 
-    C1d  <=  4455221227321351338260365312 / 3062695475332606621591827625  =  1.4546732651693088677098883...  <=  1.4546732652
+    C1d  <=  645916772895749642960740352000 / 444028774440305993304280343121  =  1.4546732330802694785184875...  <=  1.4546732331
 
-This is a small refinement (7.622e-8 below) of the 163,840-cell certificate of A. Canli in the open pull request
+This is a small refinement (1.083e-7 below) of the 163,840-cell certificate of A. Canli in the open pull request
 [teorth/optimizationproblems#345](https://github.com/teorth/optimizationproblems/pull/345), `c1d_upper_n163840_v2.json`
 (SHA-256 `253d0ca68f060eedc6fd24e3afc6b1ce477cb6a97e25d80453e4616362153a82`, value 1.45467334138563686456...,
 [certificate](https://github.com/arhancanli/quantavane-replays/tree/cc2c67deb49fb09bcdc1947d0ad0b6ee2b9106b5/improvements/c1d)).
@@ -17,19 +17,19 @@ programs were run.
 
 ## Certificate
 
-`C1d_327680_1.4546732652.txt`: 327,680 signed integers v_0 .. v_{n-1}, one per line (largest |v_i| = 10^12), the heights of a step function
+`C1d_327680_1.4546732331.txt`: 327,680 signed integers v_0 .. v_{n-1}, one per line (largest |v_i| = 10^12), the heights of a step function
 with n equal cells on [-1/4, 1/4] (cell width h = 1/(2n)). f*f is piecewise linear with knots at the multiples of h,
 where it equals h c_m with c = v*v, so
 
     max_t |(f*f)(t)| / (∫ f)^2  =  2n * max_m |c_m| / S^2,   c_m = sum_{i+j=m} v_i v_j,   S = sum_i v_i,
 
-exactly. The maximum is attained at a single knot, m = 94867.
+exactly. The maximum is attained at a single knot, m = 94805.
 
 ## Verify
 
     sha256sum -c SHA256SUMS
-    python3 verify.py C1d_327680_1.4546732652.txt --claim 1.4546732652 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
-    cc -O2 -o verify_c1d verify_c1d.c && ./verify_c1d C1d_327680_1.4546732652.txt
+    python3 verify.py C1d_327680_1.4546732331.txt --claim 1.4546732331 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
+    cc -O2 -o verify_c1d verify_c1d.c && ./verify_c1d C1d_327680_1.4546732331.txt
 
 `verify.py` (Python standard library only, about 45 seconds) gets every c_m from two big-integer products
 (Kronecker substitution: c = |v|*|v| - 4 (P*Q), where v = P - Q splits v into its positive and negative parts),
@@ -50,6 +50,7 @@ below p = 10^6, 3000 above) and keeping the vector with the lowest true ratio se
 | 3 | step 1 | 10^5 | 1.4546733293858 |
 | 4 | step 3 | 3 x 10^5 | 1.4546732965280 |
 | 5 | step 4 | 10^5 | 1.4546732651684 |
+| 6 | step 5 | 10^5 | 1.4546732330802 |
 
 The final heights were scaled so the largest is 10^12 and rounded to integers; the certificate is the exact value of
 that integer step function.
@@ -63,7 +64,8 @@ Observations, for whoever continues:
 - Restarts from intermediate p_0 (10^5 to 10^6) gained about 1e-8 each time; a second round from the step-3 vector at
   p_0 = 3 x 10^5 gained another 3.3e-8 (step 4; p_0 = 10^6 from the same start reached 1.45467330 at p = 2 x 10^9),
   and a third round from step 4 another 3.1e-8 (step 5; p_0 = 3 x 10^5 reached 1.4546732678 from the same start, and
-  p_0 = 2 x 10^5 / 5 x 10^5 from an intermediate step-4 snapshot 1.4546732691 / 1.4546732686). Gains per round are not yet shrinking. The other restarts we tried were stopped early, once
+  p_0 = 2 x 10^5 / 5 x 10^5 from an intermediate step-4 snapshot 1.4546732691 / 1.4546732686). A fourth round from step 5 gained another 3.2e-8 (step 6; p_0 = 3 x 10^5 from the same start: 1.4546732345). Gains per
+  round (3.3, 3.1, 3.2 e-8) are not yet shrinking. The other restarts we tried were stopped early, once
   their gaps had almost stopped shrinking. Restarts from low p_0 (8, 16, 32) were still 2.1e-5 to 8.8e-5 above Canli's
   value at p = 10^6 to 4 x 10^6, and p_0 = 10^4 was still 9e-8 above at p = 3 x 10^8. A split with antisymmetric noise
   (halves v_i(1 +- 10^-3 g_i)) to break the symmetry was still 1.3e-6 above at p = 3 x 10^8. We did not test whether
