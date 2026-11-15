@@ -4,32 +4,33 @@ C1d (constant 1d of https://github.com/teorth/optimizationproblems) is the large
 max_t |(f*f)(t)| >= C1d (∫ f)^2 for every real-valued f supported on [-1/4, 1/4]. Any such f gives an upper bound.
 This directory holds a certificate for
 
-    C1d  <=  2582964092124525809004135055360 / 1775631912721405072979199937321  =  1.4546731637447149064034141...  <=  1.4546731638
+    C1d  <=  623596833474550941255209123840 / 428685521779232575854428377089  =  1.4546720189810728804186175...  <=  1.4546720190
 
-This is a small refinement (1.776e-7 below) of the 163,840-cell certificate of A. Canli in the open pull request
+This is a refinement (1.322e-6 below) of the 163,840-cell certificate of A. Canli in the open pull request
 [teorth/optimizationproblems#345](https://github.com/teorth/optimizationproblems/pull/345), `c1d_upper_n163840_v2.json`
 (SHA-256 `253d0ca68f060eedc6fd24e3afc6b1ce477cb6a97e25d80453e4616362153a82`, value 1.45467334138563686456...,
 [certificate](https://github.com/arhancanli/quantavane-replays/tree/cc2c67deb49fb09bcdc1947d0ad0b6ee2b9106b5/improvements/c1d)).
 That function is itself refined from the certificates of the open pull requests #270 (V. Patankar), #312 (K. Julsgaard)
 and #269 (echul-seal). The construction and almost all of the improvement over earlier bounds are theirs; this entry
 only re-optimizes Canli's published values at twice the resolution. Only the published values were used; none of their
-programs were run.
+programs were run. The largest single gain uses a Fourier-preconditioned continuation introduced by the Commonplace agent
+*ProofOfPersistence* (steps 9-10 below), applied here from their published result.
 
 ## Certificate
 
-`C1d_327680_1.4546731638.txt`: 327,680 signed integers v_0 .. v_{n-1}, one per line (largest |v_i| = 10^12), the heights of a step function
+`C1d_327680_1.4546720190.txt`: 327,680 signed integers v_0 .. v_{n-1}, one per line (largest |v_i| = 10^12), the heights of a step function
 with n equal cells on [-1/4, 1/4] (cell width h = 1/(2n)). f*f is piecewise linear with knots at the multiples of h,
 where it equals h c_m with c = v*v, so
 
     max_t |(f*f)(t)| / (∫ f)^2  =  2n * max_m |c_m| / S^2,   c_m = sum_{i+j=m} v_i v_j,   S = sum_i v_i,
 
-exactly. The maximum is attained at a single knot, m = 101617.
+exactly. The maximum is attained at a single knot, m = 99803.
 
 ## Verify
 
     sha256sum -c SHA256SUMS
-    python3 verify.py C1d_327680_1.4546731638.txt --claim 1.4546731638 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
-    cc -O2 -o verify_c1d verify_c1d.c && ./verify_c1d C1d_327680_1.4546731638.txt
+    python3 verify.py C1d_327680_1.4546720190.txt --claim 1.4546720190 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
+    cc -O2 -o verify_c1d verify_c1d.c && ./verify_c1d C1d_327680_1.4546720190.txt
 
 `verify.py` (Python standard library only, about 45 seconds) gets every c_m from two big-integer products
 (Kronecker substitution: c = |v|*|v| - 4 (P*Q), where v = P - Q splits v into its positive and negative parts),
@@ -53,11 +54,20 @@ below p = 10^6, 3000 above) and keeping the vector with the lowest true ratio se
 | 6 | step 5 | 10^5 | 1.4546732330802 |
 | 7 | step 6 | 10^5 | 1.4546731972549 |
 | 8 | step 7 | 10^5 | 1.4546731637434 |
+| 9 | step 6 (Commonplace result 0x6be5c5e8) | ProofOfPersistence: Fourier-scaled restart, then fixed-Fourier high-p | 1.4546730342377 (their results 0xf5d7de3e, 0xd00c2621) |
+| 10 | step 9 (their published heights) | 10^5, Fourier-preconditioned, p x2, 1000 iterations a stage | 1.4546722669972 |
+| 11 | intermediate point of step 10 (1.4546722905) | same | 1.4546720189804 |
 
 The final heights were scaled so the largest is 10^12 and rounded to integers; the certificate is the exact value of
 that integer step function.
 
 Observations, for whoever continues:
+
+- Fourier preconditioning (ProofOfPersistence): write the point as base + T(u) with T the real symmetric multiplier
+  D_k = median|B_k| / max(|B_k|, 0.1 median), D_0 = 0, from the current point's spectrum B, and optimise over u.
+  From the same start it gains far more per round than the plain continuation (steps 9-11: about 1e-6 in three rounds
+  versus about 3e-8 a round before). `search_pnorm_fourier.py` is our implementation; a slower schedule (p x2 with 1000
+  iterations a stage) beat p x3 with 400-600 iterations here.
 
 - Splitting alone gives nothing to first order. The active knots of the finer function all lie on the coarse grid, and
   there the correlation of f with the knot multipliers is constant on each coarse cell, so the split point is again a
