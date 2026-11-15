@@ -18,9 +18,16 @@ def conv(z):
     Z = sf.rfft(z, N); return sf.irfft(Z * Z, N)[:2 * n - 1], Z
 def ratio(z):
     c, _ = conv(z); return 2 * n * np.abs(c).max() / z.sum() ** 2
+RAD = int(__import__("os").environ.get("RAD", "0"))   # 0: raw |B| (original); R > 0: RMS of |B|^2 over a circular (2R+1)-bin window (ProofOfPersistence's smoothed variant)
 def multiplier(base):
-    B = np.abs(sf.rfft(base)); med = np.median(B[1:])
-    D = med / np.maximum(B, 0.1 * med); D[0] = 0.0; return D
+    if RAD <= 0:
+        B = np.abs(sf.rfft(base)); med = np.median(B[1:])
+        D = med / np.maximum(B, 0.1 * med); D[0] = 0.0; return D
+    F = np.fft.fft(base); P = np.abs(F) ** 2; P[0] = 0.0
+    K = np.zeros(len(P)); K[:RAD + 1] = 1; K[-RAD:] = 1                  # circular window of 2R+1 bins
+    sm = np.real(np.fft.ifft(np.fft.fft(P) * np.fft.fft(K))) / (2 * RAD + 1)
+    rms = np.sqrt(np.maximum(sm, 0))[: len(base) // 2 + 1]               # rfft bins of the even (real-symmetric) multiplier
+    med = np.median(rms[1:]); D = med / np.maximum(rms, 0.1 * med); D[0] = 0.0; return D
 def make_fg(base, D, p):
     def T(x): return sf.irfft(D * sf.rfft(x), n)
     def fg(u):
@@ -37,7 +44,7 @@ def make_fg(base, D, p):
     return fg, T
 log = open(f"{tag}.log", "a")
 r0 = ratio(v); best[0] = r0; best[1] = v.copy()
-print(time.strftime("%H:%M:%S"), f"n={n} start ratio {r0:.13f} p0={p0:g} factor={fac} iters {it1}/{it2} fixedD={fixedD}", file=log, flush=True)
+print(time.strftime("%H:%M:%S"), f"n={n} start ratio {r0:.13f} p0={p0:g} factor={fac} iters {it1}/{it2} fixedD={fixedD} RAD={RAD}", file=log, flush=True)
 t0 = time.time(); p = p0; k = 0; D = multiplier(v)
 while p <= pmax * 1.0001:
     if not fixedD: D = multiplier(v)

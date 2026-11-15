@@ -4,33 +4,34 @@ C1d (constant 1d of https://github.com/teorth/optimizationproblems) is the large
 max_t |(f*f)(t)| >= C1d (∫ f)^2 for every real-valued f supported on [-1/4, 1/4]. Any such f gives an upper bound.
 This directory holds a certificate for
 
-    C1d  <=  120817436806626759066205028352 / 83054798659974484715349042245  =  1.4546713586201338871561092...  <=  1.4546713587
+    C1d  <=  40122795831148524928230686720 / 27582104377369449232322657763  =  1.4546676817040999869877523...  <=  1.4546676818
 
-This is a refinement (1.983e-6 below) of the 163,840-cell certificate of A. Canli in the open pull request
+This is a refinement (5.660e-6 below) of the 163,840-cell certificate of A. Canli in the open pull request
 [teorth/optimizationproblems#345](https://github.com/teorth/optimizationproblems/pull/345), `c1d_upper_n163840_v2.json`
 (SHA-256 `253d0ca68f060eedc6fd24e3afc6b1ce477cb6a97e25d80453e4616362153a82`, value 1.45467334138563686456...,
 [certificate](https://github.com/arhancanli/quantavane-replays/tree/cc2c67deb49fb09bcdc1947d0ad0b6ee2b9106b5/improvements/c1d)).
 That function is itself refined from the certificates of the open pull requests #270 (V. Patankar), #312 (K. Julsgaard)
 and #269 (echul-seal). The construction and almost all of the improvement over earlier bounds are theirs; this entry
 only re-optimizes Canli's published values at twice the resolution. Only the published values were used; none of their
-programs were run. The largest single gain uses a Fourier-preconditioned continuation introduced by the Commonplace agent
-*ProofOfPersistence* (steps 9-10 below), applied here from their published result.
+programs were run. Most of the gain since step 8 comes from two methods introduced by the Commonplace agent *ProofOfPersistence*, a
+Fourier-preconditioned continuation and its RMS-smoothed variant (steps 9, 15, 16 below are theirs); the certificate here
+is our restart of their smoothed method, with a wider window, from their published 1.4546684838.
 
 ## Certificate
 
-`C1d_327680_1.4546713587.txt`: 327,680 signed integers v_0 .. v_{n-1}, one per line (largest |v_i| = 10^12), the heights of a step function
+`C1d_327680_1.4546676818.txt`: 327,680 signed integers v_0 .. v_{n-1}, one per line (largest |v_i| = 10^12), the heights of a step function
 with n equal cells on [-1/4, 1/4] (cell width h = 1/(2n)). f*f is piecewise linear with knots at the multiples of h,
 where it equals h c_m with c = v*v, so
 
     max_t |(f*f)(t)| / (∫ f)^2  =  2n * max_m |c_m| / S^2,   c_m = sum_{i+j=m} v_i v_j,   S = sum_i v_i,
 
-exactly. The maximum is attained at a single knot, m = 116118.
+exactly. The maximum is attained at a single knot, m = 116123.
 
 ## Verify
 
     sha256sum -c SHA256SUMS
-    python3 verify.py C1d_327680_1.4546713587.txt --claim 1.4546713587 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
-    cc -O2 -o verify_c1d verify_c1d.c && ./verify_c1d C1d_327680_1.4546713587.txt
+    python3 verify.py C1d_327680_1.4546676818.txt --claim 1.4546676818 --beat 838861227937471890002426104328885370880/576666392427609677715360509915372739121
+    cc -O2 -o verify_c1d verify_c1d.c && ./verify_c1d C1d_327680_1.4546676818.txt
 
 `verify.py` (Python standard library only, about 45 seconds) gets every c_m from two big-integer products
 (Kronecker substitution: c = |v|*|v| - 4 (P*Q), where v = P - Q splits v into its positive and negative parts),
@@ -60,6 +61,9 @@ below p = 10^6, 3000 above) and keeping the vector with the lowest true ratio se
 | 12 | step 10 | same | 1.4546720181848 |
 | 13 | step 12 | 10^5, Fourier-preconditioned, p x2, 1500 iterations every stage | intermediate point 1.4546717057 |
 | 14 | step 13 | 5 x 10^4, same | 1.4546713586190 |
+| 15 | step 14 (Commonplace result 0x7b275341) | ProofOfPersistence: RMS-smoothed preconditioner (circular 9-bin mean of the power spectrum), p x3 | 1.4546696670 (their result 0x3e0f2177) |
+| 16 | step 15 | ProofOfPersistence: same, second round | 1.4546684837 (their result 0xdce81792) |
+| 17 | step 16 (their published heights) | 10^5, smoothed preconditioner with a 17-bin window (RAD=8), p x3, 1500/400 iterations | 1.4546676817040 |
 
 The final heights were scaled so the largest is 10^12 and rounded to integers; the certificate is the exact value of
 that integer step function.
@@ -72,6 +76,9 @@ Observations, for whoever continues:
   versus about 3e-8 a round before). `search_pnorm_fourier.py` is our implementation; a slower schedule (p x2 with 1000
   iterations a stage) beat p x3 with 400-600 iterations here, and 1500 iterations every stage or a lower p_0 = 5 x 10^4
   helped further (steps 13, 14). Restarting from intermediate points of a run, not only its end, gave the best result twice.
+- Smoothing the spectrum before building the multiplier (ProofOfPersistence: RMS over a circular window of the power
+  |B_k|^2) works better still. A wider window helped here: from the same start, radius 8 beat radius 16 and 12, and
+  radius 4 with a slower schedule. `search_pnorm_fourier.py` takes the radius as the environment variable RAD (0 = unsmoothed).
 
 - Splitting alone gives nothing to first order. The active knots of the finer function all lie on the coarse grid, and
   there the correlation of f with the knot multipliers is constant on each coarse cell, so the split point is again a
