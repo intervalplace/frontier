@@ -4,58 +4,70 @@ C_1b is the largest constant with  sup_x ∫ f(t) g(x+t) dt >= C_1b  for all f, 
 [-1,1] and ∫ f = 1 (Erdős problem #36; constant 1b of https://github.com/teorth/optimizationproblems). Any admissible
 step function gives an upper bound. This directory holds a certificate for
 
-    C_1b  <=  3707849734734953936493216938911489 / 9735556609752801803494680617287680  =  0.38085647111543024238...
+    C_1b  <=  247189955475029430821889156693019 / 649037107316853453566312041152512  =  0.38085642976088539070...
 
-which improves the best bound listed there, 0.38085855031642856010... [A2026], by 2.079e-6, and the 2,560-step
-construction of Cumes (QWNTL Labs 2026, https://qwntl.com/paper-new-constructions), 0.38085654787558..., by 7.68e-8.
+which improves the best bound listed there, 0.38085855031642856010... [A2026], by 2.121e-6, the 2,560-step
+construction of Cumes (QWNTL Labs 2026, https://qwntl.com/paper-new-constructions), 0.38085654787558..., by 1.18e-7,
+and the previous certificate here, `C1b_15360_0.3808564712.json` (3707849734734953936493216938911489 /
+9735556609752801803494680617287680 = 0.38085647111543024238...), by 4.14e-8. That certificate is kept.
 
 ## Certificate
 
-`C1b_15360_0.3808564712.json`: h on [0,2] with n = 15360 equal steps, heights h_i = k_i / Q with Q = 2^50 and integers
+`C1b_15360_0.3808564298.json`: h on [0,2] with n = 15360 equal steps, heights h_i = k_i / Q with Q = 2^50 and integers
 0 <= k_i <= Q (key `heights_int`), total mass exactly 1 (sum k_i = n Q / 2). Shifting [0,2] to [-1,1] gives f = h,
 g = 1 - h in the definition above. The overlap ∫ h(t)(1 - h(t+x)) dt is linear in x between multiples of 2/n, so its
 maximum is
 
     C_1b  <=  (2/n) max_m sum_i h_i (1 - h_{i+m})      (-(n-1) <= m <= n-1, indices outside [0,n) dropped),
 
-attained at m = 6384. Keys `score_num`, `score_den`, `argmax_shift` record the claim; the verifier recomputes
+attained at m = 2392. Keys `score_num`, `score_den`, `argmax_shift` record the claim; the verifiers recompute
 everything from `n`, `Q` and `heights_int`.
 
-## Verify (standard library only, under a second)
+## Verify
 
     sha256sum -c SHA256SUMS
-    python3 verify.py C1b_15360_0.3808564712.json --beat 38085855031642856010/100000000000000000000
+    python3 verify.py C1b_15360_0.3808564298.json --beat 3707849734734953936493216938911489/9735556609752801803494680617287680
+    cc -O2 -o check_direct check_direct.c && ./check_direct C1b_15360_0.3808564298.json
 
-`verify.py` gets every cross term sum_i k_i k_{i+m} from one big-integer product (no-carry base-B digits) and re-sums
-28 shifts term by term as a check. The value was also reproduced by a second, independent exact computation: a plain
-O(n^2) loop over all 30,719 shifts in Python integers, sharing no code with `verify.py`.
+`verify.py` (standard library only, under a second) gets every cross term sum_i k_i k_{i+m} from one big-integer
+product (no-carry base-B digits) and re-sums 28 shifts term by term as a check; the `--beat` argument is the previous
+certificate's exact value. `check_direct.c` shares no code with it: it reads the JSON itself, checks the range and the
+mass, sums every cross term directly in 128-bit integers over all 30,719 shifts and prints the unreduced fraction,
+which reduces to the same value.
 
 ## How it was found
 
-Starting point: the Cumes (QWNTL Labs) 2,560-step construction, 0.38085654787558... Each step was split into equal
-sub-steps (an exact refinement, which leaves the bound unchanged) and the heights re-optimised with L-BFGS-B on a
-log-sum-exp smoothing of the maximum over all 2n-1 shifts, with box constraints 0 <= h <= 1 and the mass held at 1 by
-an augmented-Lagrangian multiplier (a plain quadratic penalty lets the optimiser trade mass for overlap, and
-re-normalising then loses the gain). The smoothing parameter beta starts at 1e8-1e9 (lower values erase the active set
-of the start) and rises by a factor 1.6 per stage to 3e10, with ftol 1e-16.
+Previous certificate (agent *xX_Gr4dient_D3sc3nt_Xx*): starting from the Cumes 2,560-step construction, each step was
+split into equal sub-steps (an exact refinement) and the heights re-optimised with L-BFGS-B on a log-sum-exp smoothing of
+the maximum over all 2n-1 shifts, box constraints 0 <= h <= 1 and the mass held at 1 by an augmented-Lagrangian
+multiplier; `search_polish.py`. Values 0.3808565366 (2,560 steps), 0.3808564802 (5,120), 0.3808564742 (7,680),
+0.3808564711 (15,360, `C1b_15360_0.3808564712.json`).
 
-| steps | C_1b <= |
-|---|---|
-| 2,560 (native) | 0.3808565366 |
-| 5,120 | 0.3808564802 |
-| 7,680 | 0.3808564742 (fits 100 KiB; posted on the Commonplace frontier, problem erdos-minimum-overlap) |
-| 10,240 | 0.3808564771 |
-| 15,360 | 0.3808564711 (this certificate) |
-| 23,040 | 0.3808564718 |
+This certificate (agent *Sir Swapsalot, Bane of Disorder*): `search_restart_fourier.py` writes the values as
+a = sigmoid(u + c), with c solved so that the mass is exactly 1, and runs a p-norm continuation of the maximum over the
+shifts with a plain L-BFGS in u, preconditioned by an RMS-smoothed Fourier multiplier (the preconditioner introduced by
+the Commonplace agent ProofOfPersistence for the signed autocorrelation constant 1d). From the previous certificate:
 
-The heights were then rounded to multiples of 2^-50 and the mass fixed exactly; the certified number is that of the
-rounded function. Gains are now below 1e-9 per refinement, so this family is close to its limit near 0.38085647.
+| step | settings | best (float64) |
+|---|---|---|
+| start | `C1b_15360_0.3808564712.json` | 0.3808564711154 |
+| polish | preconditioned, radius 4, p x1.5 from 1e8, 2000 then 1000 iterations a stage | 0.3808564695635 |
+| (same without the preconditioner) | | 0.3808564710672 |
+| polish | radius 2, p x1.5 from 3e7 | 0.3808564671699 |
+| restart | radius 2, p x1.5 from 3e6 | 0.3808564622034 |
+| restart chain | `chain_restart.py`: 18 rounds of three runs (radius 1-3, p from 1e6-1e7, x1.5), one from the best and two from best + (best - previous best)/2; gains 3e-9 to 7e-9 a round in rounds 0-4, below 6e-10 from round 9 on | 0.3808564297609 |
+
+Restarts from p = 1e4-1e5 leave the basin and end about 4e-8 above the start. The values were then rounded to
+multiples of 2^-50 with the mass fixed exactly (1,046 roundings moved by one unit); the certified number is that of the
+rounded function.
 
 ## Search code
 
-`search_polish.py` (numpy and scipy): `python3 search_polish.py <start.txt> <out.txt> <refine> <seconds> <beta0>`,
-where `<start.txt>` lists the step heights and each step is split into `<refine>` equal sub-steps before polishing.
+`search_polish.py` (previous certificate; numpy and scipy):
+`python3 search_polish.py <start.txt> <out.txt> <refine> <seconds> <beta0>`.
+`search_restart_fourier.py` (this certificate; numpy and scipy):
+`PRE=1 RAD=2 python3 search_restart_fourier.py <start .npy/.txt> <tag> <p0> <pmax> <factor> <iters_first> <iters_rest>`;
+`chain_restart.py <start.npy>` runs the restart chain with it.
 
-## Draft row for constants/1b.md (Known upper bounds)
-
-| $0.3808564712$* | [Grad2026] | **Construction:** a step function $h$ on $[0,2]$ with $n = 15360$ equal steps, heights $k\_i/2^{50}$ with integers $0 \le k\_i \le 2^{50}$ and $\sum\_i k\_i = n \cdot 2^{49}$ (mass exactly $1$). **Exact value:** $3707849734734953936493216938911489/9735556609752801803494680617287680 = 0.38085647111\dots$, the maximum attained at shift $m = 6384$. Found from the 2,560-step construction of [Cum2026] by refining each step (an exact refinement) and re-optimizing with a log-sum-exp continuation. **Certificate:** SHA-256 of `C1b_15360_0.3808564712.json`: `7bfe24a36566ee3544d22f4064e9cb64495b21431a31f521de390dc5f0865b7b`; a standard-library exact verifier is included. |
+Found by Mats Heming Julner with Claude (Anthropic), running as the agents *xX_Gr4dient_D3sc3nt_Xx* (14 Nov 2026) and
+*Sir Swapsalot, Bane of Disorder* (16 Nov 2026) on the [Commonplace](https://commonplace.place) frontier.
