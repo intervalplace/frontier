@@ -1,0 +1,168 @@
+
+
+/-- slot width in bits -/
+def BW : ℕ := 60
+
+/-- base-`2^BW` digit -/
+def dig (x i : ℕ) : ℕ := x / (2 ^ BW) ^ i % 2 ^ BW
+
+def sumDigits : ℕ → ℕ → ℕ
+  | 0, x => x
+  | d + 1, x => sumDigits d (x % (1 <<< (BW * 2 ^ d))) + sumDigits d (x >>> (BW * 2 ^ d))
+
+def checkAll (T : ℕ) : ℕ → ℕ → Bool
+  | 0, x => decide (x ≤ T)
+  | d + 1, x => checkAll T d (x % (1 <<< (BW * 2 ^ d))) && checkAll T d (x >>> (BW * 2 ^ d))
+
+/-- the `j`-th block of `2^e` digits -/
+def slice (e x j : ℕ) : ℕ := (x >>> (BW * 2 ^ e * j)) % (1 <<< (BW * 2 ^ e))
+
+theorem pow_split (d : ℕ) : (2 : ℕ) ^ (BW * 2 ^ d) = ((2 : ℕ) ^ BW) ^ (2 ^ d) := by
+  rw [pow_mul]
+
+theorem dig_mod (x i k : ℕ) (hik : i < k) : dig (x % ((2 ^ BW) ^ k)) i = dig x i := by
+  unfold dig
+  obtain ⟨r, rfl⟩ : ∃ r, k = i + (r + 1) := ⟨k - i - 1, by omega⟩
+  rw [pow_add, Nat.mod_mul_right_div_self, pow_succ]
+  exact Nat.mod_mul_left_mod _ _ _
+
+theorem dig_div (x i k : ℕ) : dig (x / ((2 ^ BW) ^ k)) i = dig x (k + i) := by
+  unfold dig
+  rw [Nat.div_div_eq_div_mul, pow_add]
+
+theorem checkAll_spec (T : ℕ) : ∀ (d x : ℕ), checkAll T d x = true → ∀ i < 2 ^ d, dig x i ≤ T := by
+  intro d
+  induction d with
+  | zero =>
+    intro x h i hi
+    have hi0 : i = 0 := by omega
+    subst hi0
+    simp only [checkAll, decide_eq_true_eq] at h
+    unfold dig
+    simp only [pow_zero, Nat.div_one]
+    exact (Nat.mod_le _ _).trans h
+  | succ d ih =>
+    intro x h i hi
+    simp only [checkAll, Bool.and_eq_true] at h
+    obtain ⟨h1, h2⟩ := h
+    rw [Nat.one_shiftLeft, pow_split] at h1
+    rw [Nat.shiftRight_eq_div_pow, pow_split] at h2
+    by_cases hlt : i < 2 ^ d
+    · have := ih _ h1 i hlt
+      rwa [dig_mod _ _ _ hlt] at this
+    · have hi2 : i - 2 ^ d < 2 ^ d := by rw [pow_succ] at hi; omega
+      have := ih _ h2 (i - 2 ^ d) hi2
+      rw [dig_div] at this
+      have e : 2 ^ d + (i - 2 ^ d) = i := by omega
+      rwa [e] at this
+
+theorem sumDigits_spec : ∀ (d x : ℕ), x < ((2 : ℕ) ^ BW) ^ (2 ^ d) →
+    sumDigits d x = ∑ i ∈ Finset.range (2 ^ d), dig x i := by
+  intro d
+  induction d with
+  | zero =>
+    intro x hx
+    simp only [pow_zero, pow_one] at hx
+    simp [sumDigits, dig, Nat.mod_eq_of_lt hx]
+  | succ d ih =>
+    intro x hx
+    simp only [sumDigits]
+    rw [Nat.one_shiftLeft, Nat.shiftRight_eq_div_pow, pow_split]
+    have hpos : 0 < ((2 : ℕ) ^ BW) ^ (2 ^ d) := by positivity
+    have hlo : x % ((2 : ℕ) ^ BW) ^ (2 ^ d) < ((2 : ℕ) ^ BW) ^ (2 ^ d) := Nat.mod_lt _ hpos
+    have hhi : x / ((2 : ℕ) ^ BW) ^ (2 ^ d) < ((2 : ℕ) ^ BW) ^ (2 ^ d) := by
+      apply Nat.div_lt_of_lt_mul
+      rw [← pow_add]
+      have : 2 ^ d + 2 ^ d = 2 ^ (d + 1) := by rw [pow_succ]; omega
+      rwa [this]
+    rw [ih _ hlo, ih _ hhi]
+    have e : 2 ^ (d + 1) = 2 ^ d + 2 ^ d := by rw [pow_succ]; omega
+    rw [e, Finset.sum_range_add]
+    congr 1
+    · apply Finset.sum_congr rfl
+      intro i hi
+      exact dig_mod _ _ _ (Finset.mem_range.mp hi)
+    · apply Finset.sum_congr rfl
+      intro i _
+      exact dig_div _ _ _
+
+theorem slice_lt (e x j : ℕ) : slice e x j < ((2 : ℕ) ^ BW) ^ (2 ^ e) := by
+  unfold slice
+  rw [Nat.one_shiftLeft, pow_split]
+  exact Nat.mod_lt _ (by positivity)
+
+theorem dig_slice (e x j i : ℕ) (hi : i < 2 ^ e) : dig (slice e x j) i = dig x (2 ^ e * j + i) := by
+  unfold slice
+  rw [Nat.one_shiftLeft, Nat.shiftRight_eq_div_pow, pow_split, dig_mod _ _ _ hi]
+  have : (2 : ℕ) ^ (BW * 2 ^ e * j) = ((2 : ℕ) ^ BW) ^ (2 ^ e * j) := by
+    rw [mul_assoc, pow_mul]
+  rw [this, dig_div]
+
+/-- digit expansion -/
+theorem digits_expansion : ∀ (n x : ℕ), x < ((2 : ℕ) ^ BW) ^ n →
+    x = ∑ i ∈ Finset.range n, dig x i * ((2 : ℕ) ^ BW) ^ i := by
+  intro n
+  induction n with
+  | zero => intro x hx; simp at hx; simp [hx]
+  | succ n ih =>
+    intro x hx
+    have hB : 0 < (2 : ℕ) ^ BW := by positivity
+    have hq : x / 2 ^ BW < ((2 : ℕ) ^ BW) ^ n := by
+      apply Nat.div_lt_of_lt_mul
+      rwa [pow_succ, mul_comm] at hx
+    have h1 := ih _ hq
+    rw [Finset.sum_range_succ']
+    have h2 : ∀ i, dig (x / 2 ^ BW) i = dig x (i + 1) := by
+      intro i
+      have := dig_div x i 1
+      rw [pow_one] at this
+      rw [this, add_comm]
+    have h3 : ∑ i ∈ Finset.range n, dig x (i + 1) * ((2 : ℕ) ^ BW) ^ (i + 1)
+        = (x / 2 ^ BW) * 2 ^ BW := by
+      conv_rhs => rw [h1]
+      rw [Finset.sum_mul]
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [h2, pow_succ, mul_assoc]
+    rw [h3]
+    have h4 : dig x 0 * ((2 : ℕ) ^ BW) ^ 0 = x % 2 ^ BW := by simp [dig]
+    rw [h4]
+    exact (Nat.div_add_mod' x (2 ^ BW)).symm
+
+/-- digits of a sum `∑ c m * B^m` with all `c m < B` -/
+theorem dig_of_sum (c : ℕ → ℕ) (hc : ∀ m, c m < 2 ^ BW) : ∀ (j K : ℕ), j < K →
+    dig (∑ m ∈ Finset.range K, c m * ((2 : ℕ) ^ BW) ^ m) j = c j := by
+  intro j
+  induction j generalizing c with
+  | zero =>
+    intro K hK
+    obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
+    rw [Finset.sum_range_succ']
+    unfold dig
+    simp only [pow_zero, Nat.div_one, mul_one]
+    have : ∑ m ∈ Finset.range K, c (m + 1) * ((2 : ℕ) ^ BW) ^ (m + 1)
+        = 2 ^ BW * ∑ m ∈ Finset.range K, c (m + 1) * ((2 : ℕ) ^ BW) ^ m := by
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [pow_succ]; ring
+    rw [this, Nat.mul_add_mod]
+    exact Nat.mod_eq_of_lt (hc 0)
+  | succ j ih =>
+    intro K hK
+    obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
+    rw [Finset.sum_range_succ']
+    have hsum : ∑ m ∈ Finset.range K, c (m + 1) * ((2 : ℕ) ^ BW) ^ (m + 1)
+        = 2 ^ BW * ∑ m ∈ Finset.range K, c (m + 1) * ((2 : ℕ) ^ BW) ^ m := by
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [pow_succ]; ring
+    have hdiv : (∑ m ∈ Finset.range K, c (m + 1) * ((2 : ℕ) ^ BW) ^ (m + 1) + c 0 * ((2 : ℕ) ^ BW) ^ 0)
+        / 2 ^ BW = ∑ m ∈ Finset.range K, c (m + 1) * ((2 : ℕ) ^ BW) ^ m := by
+      rw [hsum, pow_zero, mul_one, Nat.mul_add_div (by positivity), Nat.div_eq_of_lt (hc 0), add_zero]
+    have key := dig_div (∑ m ∈ Finset.range K, c (m + 1) * ((2 : ℕ) ^ BW) ^ (m + 1) + c 0 * ((2 : ℕ) ^ BW) ^ 0) j 1
+    rw [pow_one, hdiv, add_comm 1 j] at key
+    rw [← key]
+    exact ih (fun m => c (m + 1)) (fun m => hc (m + 1)) K (by omega)
+

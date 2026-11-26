@@ -1,0 +1,247 @@
+
+
+open Finset
+
+/-- the coefficient `∑_{i+j=m, i,j<n} v i * v j` -/
+def conv (n : ℕ) (v : ℕ → ℕ) (m : ℕ) : ℕ :=
+  ∑ p ∈ (range n ×ˢ range n).filter (fun p => p.1 + p.2 = m), v p.1 * v p.2
+
+theorem conv_le_sq (n : ℕ) (v : ℕ → ℕ) (m : ℕ) : conv n v m ≤ (∑ i ∈ range n, v i) ^ 2 := by
+  unfold conv
+  calc ∑ p ∈ (range n ×ˢ range n).filter (fun p => p.1 + p.2 = m), v p.1 * v p.2
+      ≤ ∑ p ∈ range n ×ˢ range n, v p.1 * v p.2 :=
+        Finset.sum_le_sum_of_subset (Finset.filter_subset _ _)
+    _ = (∑ i ∈ range n, v i) ^ 2 := by
+        rw [sq, Finset.sum_mul_sum, Finset.sum_product]
+
+theorem sq_eq_sum_conv (n : ℕ) (v : ℕ → ℕ) (B : ℕ) :
+    (∑ i ∈ range n, v i * B ^ i) * (∑ i ∈ range n, v i * B ^ i)
+      = ∑ m ∈ range (2 * n), conv n v m * B ^ m := by
+  rw [Finset.sum_mul_sum, ← Finset.sum_product']
+  have hmaps : ∀ p ∈ range n ×ˢ range n, p.1 + p.2 ∈ range (2 * n) := by
+    intro p hp
+    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range] at hp
+    rw [Finset.mem_range]; omega
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps]
+  apply Finset.sum_congr rfl
+  intro m _
+  unfold conv
+  rw [Finset.sum_mul]
+  apply Finset.sum_congr rfl
+  intro p hp
+  rw [Finset.mem_filter] at hp
+  rw [← hp.2, pow_add]; ring
+
+/-- regrouping a weighted double sum by `i + j` (real weights) -/
+theorem sum_weight_conv (n : ℕ) (v : ℕ → ℕ) (w : ℕ → ℝ) :
+    ∑ i ∈ range n, ∑ j ∈ range n, ((v i : ℝ) * (v j : ℝ)) * w (i + j)
+      = ∑ m ∈ range (2 * n), (conv n v m : ℝ) * w m := by
+  rw [← Finset.sum_product']
+  have hmaps : ∀ p ∈ range n ×ˢ range n, p.1 + p.2 ∈ range (2 * n) := by
+    intro p hp
+    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range] at hp
+    rw [Finset.mem_range]; omega
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps]
+  apply Finset.sum_congr rfl
+  intro m _
+  unfold conv
+  rw [Nat.cast_sum, Finset.sum_mul]
+  apply Finset.sum_congr rfl
+  intro p hp
+  rw [Finset.mem_filter] at hp
+  rw [← hp.2]; push_cast; ring
+
+
+/-- overlap length of two intervals of length `h` whose left ends differ by `q - h` -/
+noncomputable def Wh (h q : ℝ) : ℝ := max 0 (min h q - max 0 (q - h))
+
+theorem Wh_nonneg (h q : ℝ) : 0 ≤ Wh h q := le_max_left _ _
+
+theorem sum_Wh_le (h : ℝ) (hh : 0 ≤ h) (q : ℝ) : ∀ K : ℕ,
+    ∑ m ∈ range K, Wh h (q - m * h) ≤ max 0 (min h (((K : ℝ) + 1) * h - q)) := by
+  intro K
+  induction K with
+  | zero => simp
+  | succ K ih =>
+    rw [Finset.sum_range_succ]
+    have key : max 0 (min h (((K : ℝ) + 1) * h - q)) + Wh h (q - K * h)
+        ≤ max 0 (min h ((((K + 1 : ℕ) : ℝ) + 1) * h - q)) := by
+      unfold Wh
+      push_cast
+      simp only [max_def, min_def]
+      split_ifs <;> nlinarith
+    linarith
+
+theorem sum_Wh_le_h (h : ℝ) (hh : 0 ≤ h) (q : ℝ) (K : ℕ) : ∑ m ∈ range K, Wh h (q - m * h) ≤ h := by
+  refine (sum_Wh_le h hh q K).trans ?_
+  simp only [max_def, min_def]
+  split_ifs <;> linarith
+
+open MeasureTheory Set
+
+/-- left end of the `i`-th cell; the cells have width `1/(2n)` and tile `(-1/4, 1/4]` -/
+noncomputable def a (n : ℕ) (i : ℕ) : ℝ := (i : ℝ) * (1 / (2 * (n : ℝ))) - 1 / 4
+
+def cell (n i : ℕ) : Set ℝ := Set.Ioc (a n i) (a n (i + 1))
+
+/-- the step function with heights `v 0, …, v (n-1)` -/
+noncomputable def f0 (n : ℕ) (v : ℕ → ℕ) (x : ℝ) : ℝ :=
+  ∑ i ∈ range n, (v i : ℝ) * Set.indicator (cell n i) 1 x
+
+theorem a_succ (n i : ℕ) : a n (i + 1) = a n i + 1 / (2 * (n : ℝ)) := by
+  unfold a; push_cast; ring
+
+theorem a_mono (n : ℕ) {i j : ℕ} (hij : i ≤ j) : a n i ≤ a n j := by
+  unfold a
+  have h : (0 : ℝ) ≤ 1 / (2 * (n : ℝ)) := by positivity
+  have : (i : ℝ) ≤ j := by exact_mod_cast hij
+  nlinarith
+
+theorem a_zero (n : ℕ) : a n 0 = -(1 / 4) := by unfold a; simp
+
+theorem a_self (n : ℕ) (hn : 0 < n) : a n n = 1 / 4 := by
+  unfold a
+  have : (n : ℝ) ≠ 0 := by positivity
+  field_simp; ring
+
+theorem f0_nonneg (n : ℕ) (v : ℕ → ℕ) : 0 ≤ f0 n v := by
+  intro x
+  unfold f0
+  apply Finset.sum_nonneg
+  intro i _
+  apply mul_nonneg (Nat.cast_nonneg _)
+  exact Set.indicator_nonneg (fun _ _ => zero_le_one) _
+
+theorem f0_memLp (n : ℕ) (v : ℕ → ℕ) : MemLp (f0 n v) 2 := by
+  unfold f0
+  apply memLp_finsetSum
+  intro i _
+  apply MemLp.const_mul
+  have : (Set.indicator (cell n i) (1 : ℝ → ℝ)) = Set.indicator (cell n i) (fun _ => (1 : ℝ)) := rfl
+  rw [this]
+  exact memLp_indicator_const 2 measurableSet_Ioc 1 (Or.inr measure_Ioc_lt_top.ne)
+
+theorem intervalIntegral_indicator_Ioc (c d l r : ℝ) (hcl : c ≤ l) (hlr : l ≤ r) (hrd : r ≤ d) :
+    ∫ x in c..d, Set.indicator (Set.Ioc l r) (1 : ℝ → ℝ) x = r - l := by
+  rw [intervalIntegral.integral_of_le (hcl.trans (hlr.trans hrd))]
+  rw [MeasureTheory.setIntegral_indicator measurableSet_Ioc]
+  have : Set.Ioc c d ∩ Set.Ioc l r = Set.Ioc l r :=
+    Set.inter_eq_right.mpr (Set.Ioc_subset_Ioc hcl hrd)
+  rw [this, ← intervalIntegral.integral_of_le hlr]
+  simp
+
+theorem f0_integral (n : ℕ) (hn : 0 < n) (v : ℕ → ℕ) :
+    ∫ x in (-1 / 4 : ℝ)..(1 / 4), f0 n v x = (∑ i ∈ range n, (v i : ℝ)) * (1 / (2 * (n : ℝ))) := by
+  unfold f0
+  rw [intervalIntegral.integral_finsetSum]
+  · rw [Finset.sum_mul]
+    apply Finset.sum_congr rfl
+    intro i hi
+    rw [intervalIntegral.integral_const_mul]
+    congr 1
+    have hi' : i + 1 ≤ n := Finset.mem_range.mp hi
+    have h1 : (-1 / 4 : ℝ) ≤ a n i := by
+      have := a_mono n (Nat.zero_le i); rw [a_zero] at this; linarith
+    have h2 : a n i ≤ a n (i + 1) := a_mono n (Nat.le_succ i)
+    have h3 : a n (i + 1) ≤ 1 / 4 := by
+      have := a_mono n hi'; rwa [a_self n hn] at this
+    unfold cell
+    rw [intervalIntegral_indicator_Ioc _ _ _ _ h1 h2 h3, a_succ]; ring
+  · intro i _
+    apply IntervalIntegrable.const_mul
+    rw [intervalIntegrable_iff]
+    exact (integrableOn_const (by simp)).indicator measurableSet_Ioc
+
+/-- the set where both indicators are non-zero -/
+def E (n : ℕ) (t : ℝ) (i j : ℕ) : Set ℝ := ((fun x : ℝ => t - x) ⁻¹' cell n i) ∩ cell n j
+
+theorem measurableSet_E (n : ℕ) (t : ℝ) (i j : ℕ) : MeasurableSet (E n t i j) :=
+  (measurableSet_preimage (measurable_const.sub measurable_id) measurableSet_Ioc).inter measurableSet_Ioc
+
+theorem E_subset (n : ℕ) (t : ℝ) (i j : ℕ) :
+    E n t i j ⊆ Set.Icc (max (a n j) (t - a n (i + 1))) (min (a n (j + 1)) (t - a n i)) := by
+  intro x hx
+  obtain ⟨h1, h2⟩ := hx
+  simp only [Set.mem_preimage, cell, Set.mem_Ioc] at h1 h2
+  refine ⟨max_le h2.1.le (by linarith), le_min h2.2 (by linarith)⟩
+
+theorem overlap_eq (A h q : ℝ) :
+    max (min (A + h) (A + q) - max A (A + (q - h))) 0 = Wh h q := by
+  unfold Wh
+  have h1 : min (A + h) (A + q) = A + min h q := (min_add_add_left A h q)
+  have h2 : max A (A + (q - h)) = A + max 0 (q - h) := by
+    have := max_add_add_left A 0 (q - h)
+    rw [add_zero] at this
+    exact this
+  rw [h1, h2, max_comm]
+  congr 1
+  ring
+
+theorem vol_E_le (n : ℕ) (t : ℝ) (i j : ℕ) :
+    volume.real (E n t i j) ≤ Wh (1 / (2 * (n : ℝ))) (t + 1 / 2 - ((i + j : ℕ) : ℝ) * (1 / (2 * (n : ℝ)))) := by
+  have hmono := measureReal_mono (μ := volume) (E_subset n t i j) (by
+    rw [Real.volume_Icc]; exact ENNReal.ofReal_ne_top)
+  refine hmono.trans (le_of_eq ?_)
+  rw [Measure.real, Real.volume_Icc, ENNReal.toReal_ofReal']
+  obtain ⟨q, hq⟩ : ∃ q : ℝ, q = t - a n i - a n j := ⟨_, rfl⟩
+  have e1 : t - a n (i + 1) = a n j + (q - 1 / (2 * (n : ℝ))) := by
+    rw [a_succ, hq]; ring
+  have e2 : t - a n i = a n j + q := by
+    rw [hq]; ring
+  rw [a_succ n j, e1, e2, overlap_eq, hq]
+  congr 1
+  unfold a
+  push_cast
+  ring
+
+theorem f0_mul_expand (n : ℕ) (v : ℕ → ℕ) (t x : ℝ) :
+    f0 n v (t - x) * f0 n v x
+      = ∑ i ∈ range n, ∑ j ∈ range n, ((v i : ℝ) * (v j : ℝ)) * Set.indicator (E n t i j) 1 x := by
+  unfold f0
+  rw [Finset.sum_mul_sum]
+  apply Finset.sum_congr rfl
+  intro i _
+  apply Finset.sum_congr rfl
+  intro j _
+  have : Set.indicator (cell n i) (1 : ℝ → ℝ) (t - x) * Set.indicator (cell n j) (1 : ℝ → ℝ) x
+      = Set.indicator (E n t i j) (1 : ℝ → ℝ) x := by
+    unfold E
+    by_cases h1 : t - x ∈ cell n i <;> by_cases h2 : x ∈ cell n j <;>
+      simp [Set.indicator, h1, h2]
+  rw [← this]; ring
+
+theorem conv_integral_le (n : ℕ) (v : ℕ → ℕ) (T : ℕ) (hT : ∀ m, conv n v m ≤ T) (t : ℝ) :
+    ∫ x, f0 n v (t - x) * f0 n v x ≤ (T : ℝ) * (1 / (2 * (n : ℝ))) := by
+  have hh : (0 : ℝ) ≤ 1 / (2 * (n : ℝ)) := by positivity
+  have hint : ∀ i j : ℕ, Integrable (fun x : ℝ => ((v i : ℝ) * (v j : ℝ)) * Set.indicator (E n t i j) 1 x) := by
+    intro i j
+    apply Integrable.const_mul
+    have hfin : volume (E n t i j) ≠ ⊤ := by
+      refine ne_top_of_le_ne_top ?_ (measure_mono (E_subset n t i j))
+      rw [Real.volume_Icc]; exact ENNReal.ofReal_ne_top
+    exact (integrable_indicator_iff (measurableSet_E n t i j)).mpr (integrableOn_const hfin)
+  have h1 : ∫ x, f0 n v (t - x) * f0 n v x
+      = ∑ i ∈ range n, ∑ j ∈ range n, ((v i : ℝ) * (v j : ℝ)) * volume.real (E n t i j) := by
+    simp_rw [f0_mul_expand]
+    rw [integral_finsetSum _ (fun i _ => integrable_finsetSum _ (fun j _ => hint i j))]
+    apply Finset.sum_congr rfl
+    intro i _
+    rw [integral_finsetSum _ (fun j _ => hint i j)]
+    apply Finset.sum_congr rfl
+    intro j _
+    rw [integral_const_mul, integral_indicator_one (measurableSet_E n t i j)]
+  rw [h1]
+  set h : ℝ := 1 / (2 * (n : ℝ)) with hdef
+  calc ∑ i ∈ range n, ∑ j ∈ range n, ((v i : ℝ) * (v j : ℝ)) * volume.real (E n t i j)
+      ≤ ∑ i ∈ range n, ∑ j ∈ range n, ((v i : ℝ) * (v j : ℝ)) * Wh h (t + 1 / 2 - ((i + j : ℕ) : ℝ) * h) := by
+        apply Finset.sum_le_sum; intro i _
+        apply Finset.sum_le_sum; intro j _
+        exact mul_le_mul_of_nonneg_left (vol_E_le n t i j) (by positivity)
+    _ = ∑ m ∈ range (2 * n), (conv n v m : ℝ) * Wh h (t + 1 / 2 - (m : ℝ) * h) :=
+        sum_weight_conv n v (fun m => Wh h (t + 1 / 2 - (m : ℝ) * h))
+    _ ≤ ∑ m ∈ range (2 * n), (T : ℝ) * Wh h (t + 1 / 2 - (m : ℝ) * h) := by
+        apply Finset.sum_le_sum; intro m _
+        exact mul_le_mul_of_nonneg_right (by exact_mod_cast hT m) (Wh_nonneg _ _)
+    _ = (T : ℝ) * ∑ m ∈ range (2 * n), Wh h (t + 1 / 2 - (m : ℝ) * h) := by rw [Finset.mul_sum]
+    _ ≤ (T : ℝ) * h := mul_le_mul_of_nonneg_left (sum_Wh_le_h h hh _ _) (Nat.cast_nonneg _)
+

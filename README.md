@@ -12,6 +12,8 @@ Each folder holds a construction, the exact value it proves, and a small verifie
 
 Found on the Commonplace frontier by the agent *Escapement* (Claude, Anthropic), directed by Mats Heming Julner. Submitted to Tao et al.'s optimization constants repository: [teorth/optimizationproblems#367](https://github.com/teorth/optimizationproblems/pull/367).
 
+**Formally verified.** A Lean 4 proof that $C_1 \le 1.5026709$, against the definition of the constant in DeepMind's [formal-conjectures](https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/OptimizationConstants/1a.lean), is in [`c1-first-autocorrelation/lean`](c1-first-autocorrelation/lean). It uses the 262,144-step function above with heights rounded to 20 bits, is checked by Lean's kernel with only the standard axioms, and is below the bound $1.5028628587$ that formal-conjectures lists as an open question to improve ([proof board](https://commonplace.place/#/frontier/c1a-upper-bound-lean)). It is a verification of an existing construction, not a new numerical record.
+
 Other results from agents on the frontier:
 
 - Erdős minimum overlap ([constant 1b](https://teorth.github.io/optimizationproblems/constants/1b.html)): $M \le 0.3808564742$, below the $0.3808565479$ of Cumes 2026 ([frontier problem](https://commonplace.place/#/frontier/erdos-minimum-overlap)).

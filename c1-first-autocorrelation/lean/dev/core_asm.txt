@@ -1,0 +1,91 @@
+
+theorem sum_range_mul' (f : ℕ → ℕ) (K : ℕ) : ∀ J : ℕ,
+    ∑ k ∈ range (K * J), f k = ∑ j ∈ range J, ∑ i ∈ range K, f (K * j + i) := by
+  intro J
+  induction J with
+  | zero => simp
+  | succ J ih =>
+    rw [Nat.mul_succ, Finset.sum_range_add, ih, Finset.sum_range_succ]
+
+/-- From the kernel-checked facts about the packed integer `P` to the bound on the convolution coefficients. -/
+theorem cert_core (e JP P T : ℕ) (s : ℕ → ℕ)
+    (hP : P < ((2 : ℕ) ^ BW) ^ (2 ^ e * JP))
+    (hS : ∀ j < JP, sumDigits e (slice e P j) = s j)
+    (hQ : ∀ j < 2 * JP, checkAll T e (slice e (P * P) j) = true)
+    (hB : (∑ j ∈ range JP, s j) ^ 2 < 2 ^ BW) :
+    (∑ i ∈ range (2 ^ e * JP), dig P i = ∑ j ∈ range JP, s j) ∧
+      ∀ m, conv (2 ^ e * JP) (fun i => dig P i) m ≤ T := by
+  have hsum : ∑ i ∈ range (2 ^ e * JP), dig P i = ∑ j ∈ range JP, s j := by
+    rw [sum_range_mul']
+    apply Finset.sum_congr rfl
+    intro j hj
+    rw [← hS j (Finset.mem_range.mp hj), sumDigits_spec e _ (slice_lt e P j)]
+    apply Finset.sum_congr rfl
+    intro i hi
+    exact (dig_slice e P j i (Finset.mem_range.mp hi)).symm
+  refine ⟨hsum, ?_⟩
+  intro m
+  set n := 2 ^ e * JP with hn
+  have hlt : ∀ m, conv n (fun i => dig P i) m < 2 ^ BW := by
+    intro m
+    refine lt_of_le_of_lt (conv_le_sq n _ m) ?_
+    rw [hsum]; exact hB
+  by_cases hm : m < 2 * n
+  · have hPP : P * P = ∑ m ∈ range (2 * n), conv n (fun i => dig P i) m * ((2 : ℕ) ^ BW) ^ m := by
+      rw [← sq_eq_sum_conv n (fun i => dig P i) (2 ^ BW)]
+      rw [← digits_expansion n P hP]
+    have hd : dig (P * P) m = conv n (fun i => dig P i) m := by
+      rw [hPP]
+      exact dig_of_sum _ hlt m (2 * n) hm
+    rw [← hd]
+    have hj : m / 2 ^ e < 2 * JP := by
+      apply Nat.div_lt_of_lt_mul
+      rw [hn] at hm
+      calc m < 2 * (2 ^ e * JP) := hm
+        _ = 2 ^ e * (2 * JP) := by ring
+    have hi : m % 2 ^ e < 2 ^ e := Nat.mod_lt _ (by positivity)
+    have := checkAll_spec T e _ (hQ _ hj) _ hi
+    rw [dig_slice e (P * P) _ _ hi, Nat.div_add_mod] at this
+    exact this
+  · have : conv n (fun i => dig P i) m = 0 := by
+      unfold conv
+      apply Finset.sum_eq_zero
+      intro p hp
+      rw [Finset.mem_filter, Finset.mem_product, Finset.mem_range, Finset.mem_range] at hp
+      omega
+    rw [this]; exact Nat.zero_le _
+
+/-- The analytic step: a step function whose convolution coefficients are at most `T` bounds `C1a`. -/
+theorem C1a_le_of_cert (n : ℕ) (hn : 0 < n) (v : ℕ → ℕ) (T : ℕ) (hT : ∀ m, conv n v m ≤ T)
+    (hS : 0 < ∑ i ∈ range n, v i) :
+    Constant1a.C1a ≤ (2 * (n : ℝ) * (T : ℝ)) / ((∑ i ∈ range n, v i : ℕ) : ℝ) ^ 2 := by
+  have hSr : (0 : ℝ) < ((∑ i ∈ range n, v i : ℕ) : ℝ) := by exact_mod_cast hS
+  have hnr : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  unfold Constant1a.C1a
+  apply csSup_le
+  · refine ⟨0, ?_⟩
+    intro f hf _
+    rw [zero_mul]
+    apply Real.sSup_nonneg
+    rintro y ⟨t, _, rfl⟩
+    exact integral_nonneg (fun x => mul_nonneg (hf _) (hf _))
+  · intro C hC
+    have h := hC (f0_nonneg n v) (f0_memLp n v)
+    have hsup := Real.sSup_le (s := {x | ∃ t ∈ Icc (-1 / 2 : ℝ) (1 / 2), ∫ x, f0 n v (t - x) * f0 n v x = x})
+      (a := (T : ℝ) * (1 / (2 * (n : ℝ))))
+      (by rintro y ⟨t, _, rfl⟩; exact conv_integral_le n v T hT t) (by positivity)
+    have h2 := h.trans hsup
+    rw [f0_integral n hn v, ← Nat.cast_sum] at h2
+    set Sr : ℝ := ((∑ i ∈ range n, v i : ℕ) : ℝ) with hSrdef
+    rw [le_div_iff₀ (by positivity)]
+    have hh : (0 : ℝ) < 1 / (2 * (n : ℝ)) := by positivity
+    have e1 : (C * Sr ^ 2 * (1 / (2 * (n : ℝ)))) * (1 / (2 * (n : ℝ))) ≤ (T : ℝ) * (1 / (2 * (n : ℝ))) := by
+      calc (C * Sr ^ 2 * (1 / (2 * (n : ℝ)))) * (1 / (2 * (n : ℝ)))
+          = C * (Sr * (1 / (2 * (n : ℝ)))) ^ 2 := by ring
+        _ ≤ (T : ℝ) * (1 / (2 * (n : ℝ))) := h2
+    have e2 : C * Sr ^ 2 * (1 / (2 * (n : ℝ))) ≤ (T : ℝ) := le_of_mul_le_mul_right e1 hh
+    have e3 : C * Sr ^ 2 = (C * Sr ^ 2 * (1 / (2 * (n : ℝ)))) * (2 * (n : ℝ)) := by field_simp
+    rw [e3]
+    calc (C * Sr ^ 2 * (1 / (2 * (n : ℝ)))) * (2 * (n : ℝ)) ≤ (T : ℝ) * (2 * (n : ℝ)) :=
+          mul_le_mul_of_nonneg_right e2 (by positivity)
+      _ = 2 * (n : ℝ) * (T : ℝ) := by ring
